@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import { Route, HashRouter } from "react-router-dom";
 import { Flex, Box, Link, Button, Card, Image } from 'rebass';
+import Countdown from 'react-countdown';
 
 class Main extends Component {
 
@@ -60,6 +61,7 @@ class Quiz extends Component {
     super(props);
     this.api_host = process.env.REACT_APP_API_HOST_DEV;
     this.checkAnswer = this.checkAnswer.bind(this);
+    this.goToGameOver = this.goToGameOver.bind(this);
     this.state = {
       error: undefined,
       quiz: {
@@ -70,7 +72,8 @@ class Quiz extends Component {
         }]
       },
       current_question_ind: 0,
-      curr_score: 0
+      curr_score: 0,
+      loadCountdown : false
     }
   }
 
@@ -82,7 +85,10 @@ class Quiz extends Component {
     }
     else {
       const quiz = await response.json();
-      this.setState({ quiz: quiz })
+      this.setState({
+        quiz: quiz,
+        loadCountdown: true
+      })
     }
   }
 
@@ -98,6 +104,10 @@ class Quiz extends Component {
     }
   }
 
+  goToGameOver() {
+    this.props.history.push("/gameover");
+  }
+
   render() {
     return <Box>
       <Box>{this.state.quiz.questions[this.state.current_question_ind].content}</Box>
@@ -108,7 +118,7 @@ class Quiz extends Component {
               sx={{ width: ['100%', '50%'], borderRadius: 8 }}
               src={this.state.quiz.questions[this.state.current_question_ind].actor.pictureURL} />
           </Card>
-          <Button color='pink' bg='black' onClick={()=> this.checkAnswer(true)}>Yes</Button>
+          <Button color='pink' bg='black' onClick={() => this.checkAnswer(true)}>Yes</Button>
         </Box>
         <Box>
           <Card>
@@ -116,10 +126,11 @@ class Quiz extends Component {
               sx={{ width: ['100%', '50%'], borderRadius: 8 }}
               src={this.state.quiz.questions[this.state.current_question_ind].movie.pictureURL} />
           </Card>
-          <Button color='pink' bg='black' onClick={()=> this.checkAnswer(false)}>No</Button>
+          <Button color='pink' bg='black' onClick={() => this.checkAnswer(false)}>No</Button>
         </Box>
       </Flex>
       <Box>Score: {this.state.curr_score}</Box>
+      { this.state.loadCountdown? (<Countdown date={Date.now() + 60000} onComplete={this.goToGameOver} />): <div></div>}
     </Box>
   }
 }
