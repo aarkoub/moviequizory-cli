@@ -62,8 +62,10 @@ class Quiz extends Component {
     this.api_host = process.env.REACT_APP_API_HOST_DEV;
     this.checkAnswer = this.checkAnswer.bind(this);
     this.goToGameOver = this.goToGameOver.bind(this);
+    this.countdownRef = React.createRef();
     this.state = {
       error: undefined,
+      isLoaded: false,
       quiz: {
         questions: [{
           content: "",
@@ -73,7 +75,7 @@ class Quiz extends Component {
       },
       current_question_ind: 0,
       curr_score: 0,
-      loadCountdown: false
+      left_time: Date.now() + 65000
     }
   }
 
@@ -81,13 +83,16 @@ class Quiz extends Component {
     const response = await fetch(this.api_host + "quizzes/generate", { credentials: 'include' });
     this.setState({ isLoaded: true })
     if (response.error) {
-      this.setState({ error: response.error });
+      this.setState({
+        error: response.error,
+        isLoaded: true
+      });
     }
     else {
       const quiz = await response.json();
       this.setState({
         quiz: quiz,
-        loadCountdown: true
+        isLoaded: true
       })
     }
   }
@@ -96,12 +101,15 @@ class Quiz extends Component {
     if (response === this.state.quiz.questions[this.state.current_question_ind].true) {
       this.setState({ curr_score: this.state.curr_score + 1 })
     }
-    if (this.state.current_question_ind === this.state.current_question_ind + 1 == this.state.quiz.questions.length) {
+    if (this.state.current_question_ind + 1 === this.state.quiz.questions.length) {
       this.props.history.push("/gameover");
     }
     else {
       this.setState({ current_question_ind: this.state.current_question_ind + 1 })
     }
+    
+    this.state.left_time = this.countdownRef.current.props.date;
+ 
   }
 
   goToGameOver() {
@@ -112,29 +120,35 @@ class Quiz extends Component {
   }
 
   render() {
-    return <Box>
-      <Box>{this.state.quiz.questions[this.state.current_question_ind].content}</Box>
-      <Flex>
-        <Box>
-          <Card>
-            <Image
-              sx={{ width: ['100%', '50%'], borderRadius: 8 }}
-              src={this.state.quiz.questions[this.state.current_question_ind].actor.pictureURL} />
-          </Card>
-          <Button color='pink' bg='black' onClick={() => this.checkAnswer(true)}>Yes</Button>
-        </Box>
-        <Box>
-          <Card>
-            <Image
-              sx={{ width: ['100%', '50%'], borderRadius: 8 }}
-              src={this.state.quiz.questions[this.state.current_question_ind].movie.pictureURL} />
-          </Card>
-          <Button color='pink' bg='black' onClick={() => this.checkAnswer(false)}>No</Button>
-        </Box>
-      </Flex>
-      <Box>Score: {this.state.curr_score}</Box>
-      {this.state.loadCountdown ? (<Countdown date={Date.now() + 60000} onComplete={this.goToGameOver} />) : <div></div>}
-    </Box>
+    if (this.state.error) {
+      return <Box>Erreur : {this.state.error.message}</Box>;
+    } else if (!this.state.isLoaded) {
+      return <Box>Chargement…</Box>;
+    } else {
+      return <Box>
+        <Box>{this.state.quiz.questions[this.state.current_question_ind].content}</Box>
+        <Flex>
+          <Box>
+            <Card>
+              <Image
+                sx={{ width: ['100%', '50%'], borderRadius: 8 }}
+                src={this.state.quiz.questions[this.state.current_question_ind].actor.pictureURL} />
+            </Card>
+            <Button color='pink' bg='black' onClick={() => this.checkAnswer(true)}>Yes</Button>
+          </Box>
+          <Box>
+            <Card>
+              <Image
+                sx={{ width: ['100%', '50%'], borderRadius: 8 }}
+                src={this.state.quiz.questions[this.state.current_question_ind].movie.pictureURL} />
+            </Card>
+            <Button color='pink' bg='black' onClick={() => this.checkAnswer(false)}>No</Button>
+          </Box>
+        </Flex>
+        <Box>Score: {this.state.curr_score}</Box>
+        <Countdown ref={this.countdownRef} date={this.state.left_time} onComplete={this.goToGameOver} />
+      </Box>
+    }
   }
 }
 
@@ -142,8 +156,7 @@ class Result extends Component {
 
   constructor(props) {
     super(props);
-    console.log(props)
-    this.state = props.location.state? props.location.state : {score : 0};
+    this.state = props.location.state ? props.location.state : { score: 0 };
   }
 
   render() {
@@ -172,7 +185,6 @@ class Welcome extends Component {
            </Box>
         <Button color='pink' bg='black' onClick={this.startGame}>Start</Button>
       </Box>
-
     );
   }
 
