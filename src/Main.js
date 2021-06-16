@@ -73,7 +73,7 @@ class Quiz extends Component {
       },
       current_question_ind: 0,
       curr_score: 0,
-      loadCountdown : false
+      loadCountdown: false
     }
   }
 
@@ -105,7 +105,10 @@ class Quiz extends Component {
   }
 
   goToGameOver() {
-    this.props.history.push("/gameover");
+    this.props.history.push({
+      pathname: "/gameover",
+      state: { score: this.state.curr_score }
+    });
   }
 
   render() {
@@ -130,14 +133,21 @@ class Quiz extends Component {
         </Box>
       </Flex>
       <Box>Score: {this.state.curr_score}</Box>
-      { this.state.loadCountdown? (<Countdown date={Date.now() + 60000} onComplete={this.goToGameOver} />): <div></div>}
+      {this.state.loadCountdown ? (<Countdown date={Date.now() + 60000} onComplete={this.goToGameOver} />) : <div></div>}
     </Box>
   }
 }
 
 class Result extends Component {
+
+  constructor(props) {
+    super(props);
+    console.log(props)
+    this.state = props.location.state? props.location.state : {score : 0};
+  }
+
   render() {
-    return <div>Display results</div>
+    return <div>Score: {this.state.score}</div>
   }
 
 }
