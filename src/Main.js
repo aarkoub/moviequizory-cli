@@ -10,8 +10,9 @@ class Main extends Component {
     this.api_host = process.env.REACT_APP_API_HOST_DEV;
     this.state = {
       error: undefined,
-      user: undefined
+      user: { highscore: 0, id: "" }
     }
+    this.setHighscore = this.setHighscore.bind(this)
   }
 
   async componentDidMount() {
@@ -21,8 +22,13 @@ class Main extends Component {
       this.setState({ error: response.error });
     }
     else {
-      this.setState({ user: response.json() })
+      const user = await response.json();
+      this.setState({ user: user })
     }
+  }
+
+  setHighscore(highscore) {
+    this.setState({ user: { highscore: highscore } })
   }
 
   render() {
@@ -47,7 +53,8 @@ class Main extends Component {
           <Box id="content">
             <Route exact path="/" component={Welcome} />
             <Route path="/play" component={Quiz} />
-            <Route path="/gameover" component={Result} />
+            <Route path="/gameover" render={(props) => (<Result {...props} highscore={this.state.user.highscore} userId={this.state.user.id}
+              setHighscore={this.setHighscore} />)} />
           </Box>
         </Box>
       </HashRouter>
@@ -102,14 +109,17 @@ class Quiz extends Component {
       this.setState({ curr_score: this.state.curr_score + 1 })
     }
     if (this.state.current_question_ind + 1 === this.state.quiz.questions.length) {
-      this.props.history.push("/gameover");
+      this.props.history.push({
+        pathname: "/gameover",
+        state: { score: this.state.curr_score }
+      });
     }
     else {
       this.setState({ current_question_ind: this.state.current_question_ind + 1 })
     }
-    
+
     this.state.left_time = this.countdownRef.current.props.date;
- 
+
   }
 
   goToGameOver() {
@@ -156,11 +166,48 @@ class Result extends Component {
 
   constructor(props) {
     super(props);
-    this.state = props.location.state ? props.location.state : { score: 0 };
+    this.state = {
+      score: props.location.state ? props.location.state.score : 0,
+      highscore: this.props.highscore
+    };
+    this.retry = this.retry.bind(this);
+    this.api_host = process.env.REACT_APP_API_HOST_DEV;
+    
+  }
+
+  async componentDidMount() {
+    if (this.state.score > this.props.highscore) {
+      const response = await fetch(this.api_host + "users/" + this.props.userId + "/highscore/set",
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ new_highscore: this.state.score })
+        });
+      this.setState({ isLoaded: true })
+      if (response.error) {
+        this.setState({
+          error: response.error,
+          isLoaded: true
+        });
+      }
+      this.props.setHighscore(this.state.score)
+      this.setState({highscore : this.state.score});
+    }
+  }
+
+  retry() {
+    this.props.history.push({
+      pathname: "/play"
+    });
   }
 
   render() {
-    return <div>Score: {this.state.score}</div>
+    return <Box>
+      <Box>Your score: {this.state.score}</Box>
+      <Box>Your highest score: {this.state.highscore}</Box>
+      <Button color='pink' bg='black' onClick={this.retry}>Retry?</Button>
+    </Box>
   }
 
 }
