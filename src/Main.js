@@ -3,11 +3,21 @@ import { Route, HashRouter } from "react-router-dom";
 import { Flex, Box, Link, Button, Card, Image } from 'rebass';
 import Countdown from 'react-countdown';
 
+
 class Main extends Component {
 
   constructor(props) {
     super(props);
-    this.api_host = process.env.REACT_APP_API_HOST_DEV;
+    if (process.env.NODE_ENV === 'development') {
+      this.api_host = process.env.REACT_APP_API_HOST_DEV;
+    }
+    else {
+      if (process.env.NODE_ENV === 'production') {
+        this.api_host = process.env.REACT_APP_API_HOST_PROD;
+      } else {
+        this.api_host = process.env.REACT_APP_API_HOST_TEST;
+      }
+    }
     this.state = {
       error: undefined,
       user: { highscore: 0, id: "" }
@@ -66,7 +76,16 @@ class Quiz extends Component {
 
   constructor(props) {
     super(props);
-    this.api_host = process.env.REACT_APP_API_HOST_DEV;
+    if (process.env.NODE_ENV === 'development') {
+      this.api_host = process.env.REACT_APP_API_HOST_DEV;
+    }
+    else {
+      if (process.env.NODE_ENV === 'production') {
+        this.api_host = process.env.REACT_APP_API_HOST_PROD;
+      } else {
+        this.api_host = process.env.REACT_APP_API_HOST_TEST;
+      }
+    }
     this.checkAnswer = this.checkAnswer.bind(this);
     this.goToGameOver = this.goToGameOver.bind(this);
     this.countdownRef = React.createRef();
@@ -171,8 +190,17 @@ class Result extends Component {
       highscore: this.props.highscore
     };
     this.retry = this.retry.bind(this);
-    this.api_host = process.env.REACT_APP_API_HOST_DEV;
-    
+    if (process.env.NODE_ENV === 'development') {
+      this.api_host = process.env.REACT_APP_API_HOST_DEV;
+    }
+    else {
+      if (process.env.NODE_ENV === 'production') {
+        this.api_host = process.env.REACT_APP_API_HOST_PROD;
+      } else {
+        this.api_host = process.env.REACT_APP_API_HOST_TEST;
+      }
+    }
+
   }
 
   async componentDidMount() {
@@ -192,7 +220,7 @@ class Result extends Component {
         });
       }
       this.props.setHighscore(this.state.score)
-      this.setState({highscore : this.state.score});
+      this.setState({ highscore: this.state.score });
     }
   }
 
